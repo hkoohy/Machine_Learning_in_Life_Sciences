@@ -1,0 +1,10 @@
+Package: informationRetrieval
+Type: Package
+Title: Information retrieval from online resources such as pubmed
+Version: 1.0
+Date: 2014-11-10
+Author: Hashem Koohy
+Maintainer: Hashem Koohy <hashem.koohy@babraham.ac.uk>
+Description: If you want to look at the trends in the litrature, then this is
+    the package you should be looking at!
+License: HK_BI
