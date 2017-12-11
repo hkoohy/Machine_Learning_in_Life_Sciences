@@ -8,14 +8,14 @@ First load the required libraries.
 
 ```{r sourcing-function, echo=FALSE}
 library(knitr)
-r_files <- list.files(path='../R/', pattern = '.R')
+r_files <- list.files(path='../R/', pattern = '.R', full.names = TRUE)
 for (r_file in r_files){
   source(r_file)
 }
 ```
 
 ```{r Call Trends}
-library(informationRetrieval)
+#library(informationRetrieval)
 library(RISmed)
 library(reshape2)
 library(ggplot2)
