@@ -5,6 +5,15 @@ Machine Learning Trends in Pubmed
 This is how I have been looking at machine learning trends in pubmed publications: Please run the following chunck only once.
 First load the required libraries.
 
+
+```{r sourcing-function, echo=FALSE}
+library(knitr)
+r_files <- list.files(path='../R/', pattern = '.R')
+for (r_file in r_files){
+  source(r_file)
+}
+```
+
 ```{r Call Trends}
 library(informationRetrieval)
 library(RISmed)
