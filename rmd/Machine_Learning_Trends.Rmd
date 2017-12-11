@@ -1,0 +1,198 @@
+Machine Learning Trends in Pubmed
+========================================================
+
+
+This is how I have been looking at machine learning trends in pubmed publications: Please run the following chunck only once.
+First load the required libraries.
+
+```{r Call Trends}
+library(informationRetrieval)
+library(RISmed)
+library(reshape2)
+library(ggplot2)
+library(devtools)
+library(roxygen2)
+YEARs <- 1990:2017
+```
+
+First I would like to see if I can get an overall trends of machine-learning in life sciencs.
+```{r all-techniques, }
+query = '( (random forest[tw])  OR (support vector machine[tw]) OR (artificial neural network[tw]) OR (artificial neural networks[tw] OR deep neural networks[tw] or deep learning[tw]) OR (principal component analysis[tw]) OR (hierarchical clustering[tw]) OR (markov model[tw]) OR (decision tree[tw]) OR (TSNE[tw] OR T-SNE[tw] or t-sne[tw] or tsne[tw] or t-SNE[tw] or distributed stochastic neighbor embedding[tw]))'
+  
+query_with_lr =  '((random forest[tw])  OR (support vector machine[tw]) OR (artificial neural network[tw]) OR (artificial neural networks[tw] OR deep neural networks[tw] or deep learning[tw]) OR (principal component analysis[tw]) OR (hierarchical clustering[tw]) OR (linear regression[tw]) OR (markov model[tw]) OR (decision tree[tw]) OR (TSNE[tw] OR T-SNE[tw] or t-sne[tw] or tsne[tw] or t-SNE[tw] or distributed stochastic neighbor embedding[tw]))'
+
+hpm_all_ml_techs <- get_normliazed_number_of_hits(years=YEARs, query=query_with_lr, db="pubmed", normalization_value=100)
+hpm_all_ml_techs
+
+```
+
+Now plot and fit lines into the points
+
+```{r plt-best-fit-line}
+
+
+fit_and_plot(hpm_all_ml_techs, YEARs)
+
+
+```
+
+
+Now I will retrive normalized number of hits per machine learning technique. This means that for each, the number of hits for a specific technique is divided to total number papers published in that year. This number is multipled by normalization-value (1000000) to get per million hits.
+
+```{r ML trends}
+RF_hits   <- get_normliazed_number_of_hits(years=YEARs, query="random forest[tw]", db="pubmed", normalization_value=1000000)
+  
+ANN_hits       <-  get_normliazed_number_of_hits(years = YEARs, query="artificial neural network[tw]", db="pubmed", normalization_value=1000000)
+
+NN_term <-  "(deep neural networks[tw] or deep learning[tw])"
+  #"(artificial neural networks[tw] OR deep neural networks[tw] or deep learning[tw])"
+DNN_hits <-  get_normliazed_number_of_hits(years=YEARs, query=NN_term, db="pubmed", normalization_value=1000000)
+  
+SVM_hits <- get_normliazed_number_of_hits(years=YEARs, query="support vector machine[tw]", db="pubmed", normalization_value=1000000)
+
+
+PCA_hits <- get_normliazed_number_of_hits(years=YEARs, query="principal component analysis[tw]", db="pubmed", normalization_value=1000000)
+
+HC_hits <- get_normliazed_number_of_hits(years=YEARs, query="hierarchical clustering[tw]", db="pubmed", normalization_value=1000000)
+
+Log_Reg_hits <- get_normliazed_number_of_hits(years=YEARs, query="logistics regression[tw]", db="pubmed", normalization_value=1000000)
+
+Linear_Reg_hits <- get_normliazed_number_of_hits(years=YEARs, query="linear regression[tw]", db="pubmed", normalization_value=1000000)
+
+MM_hits <- get_normliazed_number_of_hits(years=YEARs, query="markov model[tw]", db="pubmed", normalization_value=1000000)
+
+
+DT_hits <- get_normliazed_number_of_hits(years=YEARs, query="decision tree[tw]", db="pubmed", normalization_value=1000000)
+
+TSNE_term <- "(TSNE[tw] OR T-SNE[tw] or t-sne[tw] or tsne[tw] or t-SNE[tw] or distributed stochastic neighbor embedding[tw])"
+TSNE_hits <- get_normliazed_number_of_hits(years=YEARs, query=TSNE_term, db="pubmed", normalization_value=1000000)
+
+NBC_term <- "(naive bayes classifier[tw] OR naive bayesian classifier[tw])"
+
+NBC_hitsw <- get_normliazed_number_of_hits(years=YEARs, query=NBC_term, db="pubmed", normalization_value=1000000)
+
+```
+
+Now combined the data we reterieved (trends in pulblication over various techniques) and make a data frame as it is simpler to work with (note the 'as.numeric' is to convert from list to numeric ):
+```{r combined data}
+ML_df <- data.frame(years=YEARs, RF=as.numeric(RF_hits), SVM=as.numeric(SVM_hits), ANN=as.numeric(ANN_hits),                                      PCA=as.numeric(PCA_hits), LRM=as.numeric(Linear_Reg_hits), MM=as.numeric(MM_hits), DT=as.numeric(DT_hits),        HC=as.numeric(HC_hits), DNN=as.numeric(DNN_hits), TSNE=as.numeric(TSNE_hits), NBC=as.numeric(NBC_hitsw), LogReg=as.numeric(Log_Reg_hits))
+
+melted_df <- melt(ML_df, id=c("years"))
+
+
+plt <- ggplot(data=melted_df, aes(x=years, y=value, colour=variable))+ 
+  geom_line(size=2, aes(linetype = variable)) +
+ scale_color_manual(values = c("red", "blue", "green", "brown", "yellow", "orange", "grey", "purple","maroon", "black", "navy", "coral4", "wheat4")) 
+plt + theme(axis.text.x = element_text(size=15, color="black"), axis.title.x=element_text(size=20),  
+             axis.text.y = element_text(size=15, color="black"), axis.title.y=element_text(size=20), 
+             panel.background = element_rect(fill = 'gray80', colour = 'black'), plot.title = element_text(size = rel(2)) ) + 
+   ggtitle("Machine Learning Trends in Pubmed")+ xlab("years")+ylab("Number of Publications (per million)")
+ 
+```
+
+
+because number of publications for PCA is far greater than other techinques, it overshadows other techniques. Therefore
+we have analysed trends without PCA:
+```{r without PCA}
+ML_no_PCA_no_LinRM_df <- subset(ML_df, select = -c(PCA, LRM))
+#data.frame(years=YEARs, RF=as.numeric(RF_hits), SVM=as.numeric(SVM_hits), ANN=as.numeric(ANN_hits),    MM=as.numeric(MM_hits), DT=as.numeric(DT_hits), HC=as.numeric(HC_hits), DNN=as.numeric(DNN_hits),TSNE=as.numeric(TSNE_hits))
+
+
+
+ML_no_PCA_no_LinRM <- melt(ML_no_PCA_no_LinRM_df, id=c("years"))
+
+plt2 <- ggplot(data=ML_no_PCA_no_LinRM, aes(x=years, y=value, colour=variable))+ 
+  geom_line(size=1.5, aes(linetype = variable))+scale_color_manual(values = c("red", "blue", "green",  "orange", "grey", "purple","maroon",  "navy", "coral4", "wheat4")) 
+
+plt2 + theme(axis.text.x = element_text(size=15, color="black"), axis.title.x=element_text(size=20),  
+             axis.text.y = element_text(size=15, color="black"), axis.title.y=element_text(size=20), 
+             panel.background = element_rect(fill = 'gray80', colour = 'black'), plot.title = element_text(size = rel(2))) +
+            #legend.justification=c(0,1), legend.position = c(0, 1) ) + 
+   ggtitle("Machine Learning Trends in Pubmed")+ xlab("years")+ylab("Number of Publications (per million)")
+
+```
+
+
+
+
+
+Now I need a zoomed in figure to show that TSNE has a sharp gradient during 2015-2017
+
+```{r TSNE and LRM}
+tsne_years <- YEARs[18:28]
+tsne_hits  <- as.numeric(TSNE_hits[18:28])
+nbc_hits <- as.numeric(NBC_hitsw[18:28])
+
+plot(tsne_hits~tsne_years, col='navy', lwd=5, type='b', xlab='year', ylab="Number of Publications (per million)")
+
+tsne
+```
+
+
+
+```{r LR fit}
+plot(as.numeric(Linear_Reg_hits[15:28])~YEARs[15:28], lwd=3, col='red')
+LR_fit <- lm(as.numeric(Linear_Reg_hits[15:28])~YEARs[15:28])
+LR_fit
+abline(LR_fit)
+
+```
+
+
+
+We want to limit only on next generation sequencing OR high-throughput sequencing
+```{r ML with NGS}
+# RF_NGS_Q = "(next generation sequencing[tw] OR high-throughput sequencing[tw] or high throughput sequencing[tw]) AND random forest[tw]"
+# RF_NGS_hits = get.Normalized.Number.Of.Hits(1990:2014, query=RF_NGS_Q, db="pubmed", normalization_value=1000000)
+# 
+# SVM_NGS_Q = "(next generation sequencing[tw] OR high-throughput sequencing[tw] or high throughput sequencing[tw]) AND support vector machine[tw]"
+# SVM_NGS_hits = get.Normalized.Number.Of.Hits(1990:2014, query=SVM_NGS_Q, db="pubmed", normalization_value=1000000)
+# 
+# ANN_NGS_Q = "(next generation sequencing[tw] OR high-throughput sequencing[tw] or high throughput sequencing[tw]) AND artificial neural networks[tw]"
+# ANN_NGS_hits = get.Normalized.Number.Of.Hits(1990:2014, query=ANN_NGS_Q, db="pubmed", normalization_value=1000000)
+# 
+# PCA_NGS_Q = "(next generation sequencing[tw] OR high-throughput sequencing[tw] or high throughput sequencing[tw]) AND principal component analysis[tw]"
+# PCA_NGS_hits = get.Normalized.Number.Of.Hits(1990:2014, query=PCA_NGS_Q, db="pubmed", normalization_value=1000000)
+
+
+```
+
+
+# plot popularity rate
+```{r PR, echo=FALSE}
+get_popularity_rate <- function(hits_df){
+  col_names <- colnames(hits_df)
+  full_years <- hits_df$year
+  df <- hits_df
+  #PR starts from second year 
+  years <- full_years[-1]
+  df <- subset(hits_df, select= c(col_names[-1]))
+  # 
+  df1 <- df[-1, ]
+  print(dim(df1))
+  df2 <- df[-dim(df)[1], ]
+  print(dim(df2))
+  delta_df = df1 - df2
+  delta_df['years'] = years
+  melted_delta_df <- melt(delta_df, id=c("years"))
+  plt = ggplot(data=melted_delta_df, aes(x=years, y=value, colour=variable))+ geom_line(size=1) 
+  print(plt+ facet_wrap( ~ variable, ncol=3))
+  return(delta_df)
+}
+
+pr_df = get_popularity_rate(ML_df)
+
+models = colnames(pr_df)
+models
+
+
+par(mfrow=c(3, 4))
+for (m_index in 1: (length(models) -1 )){
+  m = models[m_index]
+  plot(1991:2017, pr_df[[m_index]]/400, type='l', lwd=1, main = m, xlab = 'Year', ylab='Popularity Rate', ylim=c(-1, 1))
+
+  abline(h=0,  lty='dashed',col='grey', lwd=3)
+}
+
+length(pr_df[[1]])
+```
